@@ -28,9 +28,7 @@ const register = asyncHandler(async (req, res, next) => {
   });
   await newUser.save();
 
-  const token = await issueToken(newUser);
-  console.log(token);
-  res.redirect("/");
+  res.redirect("/users/profile");
 });
 
 const registerForm = asyncHandler(async (req, res, next) => {

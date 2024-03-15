@@ -18,19 +18,19 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
+const sessionOptions = {
+  resave: false,
+  saveUninitialized: true,
+  secret: "hello",
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24,
+  },
+};
+
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(
-  session({
-    resave: false,
-    saveUninitialized: true,
-    secret: "hello",
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24,
-    },
-  })
-);
+app.use(session(sessionOptions));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -41,7 +41,7 @@ app.use(express.static("public"));
 app.use("/users", userRoute);
 
 app.get("/", (req, res) => {
-  res.send("Registered successfully");
+  res.send("Welcome to advanced chat app");
 });
 
 app.all("*", (req, res, next) => {
