@@ -6,6 +6,7 @@ const {
 const User = require("../models/User");
 const CustomError = require("../middleware/CustomError");
 const asyncHandler = require("../utils/asyncHandler");
+const Chat = require("../models/Chat");
 
 const register = asyncHandler(async (req, res, next) => {
   const { name, email, password } = req.body;
@@ -73,6 +74,17 @@ const logout = asyncHandler(async (req, res, next) => {
   });
 });
 
+const saveChat = asyncHandler(async (req, res, next) => {
+  const { sender_id, receiver_id, message } = req.body;
+  const chat = await Chat.create({
+    sender_id,
+    receiver_id,
+    message,
+  });
+
+  res.status(200).json({ success: true, data: chat });
+});
+
 module.exports = {
   register,
   registerForm,
@@ -80,4 +92,5 @@ module.exports = {
   login,
   logout,
   getProfile,
+  saveChat,
 };

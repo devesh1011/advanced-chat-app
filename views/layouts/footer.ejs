@@ -1,14 +1,161 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
 
+<script>
+  const sender_id = '<%= user._id %>';
+  let receiver_id = "";
 
+  const socket = io({
+    query: {
+      sender_id
+    }
+  });
 
+  $(document).ready(function() {
+    $('[data-toggle=offcanvas]').click(function() {
+      $('.row-offcanvas').toggleClass('active');
+    });
 
+    $('.card').click(function() {
+      const userId = $(this).attr("data-id");
+      receiver_id = userId;
 
+      const userImg = $(this).find(".card-img-top").attr("src");
+      const userName = $(this).find(".card-title").text().trim();
 
+      $('.receiver_name').text(userName);
+      $('.current_status').addClass(`${receiver_id}`)
+      $('.avatar img').attr("src", userImg);
 
+      socket.emit("checkOnlineStatus", {
+        receiver_id
+      })
 
+      $('.chat-section').show();
+    });
+  });
 
+  // get user status (online or offline)
+  socket.on("get-online-user", (data) => {
+    $(`#${data.sender_id}_status`).removeClass("bg-danger");
+    $(`#${data.sender_id}_status`).addClass("bg-success")
+  })
 
+  socket.on("get-offline-user", (data) => {
+    $(`#${data.sender_id}_status`).removeClass("bg-success");
+    $(`#${data.sender_id}_status`).addClass("bg-danger")
+  })
 
+  socket.on("onlineStatus", (data) => {
+    const userId = data.receiver_id;
+    const status = data.online ? "Online" : "Offline";
+    $(`.${userId}`).text(status);
+  });
+
+  // user chat save
+  var form = document.querySelector('.conversation-compose');
+  var conversation = document.querySelector('.conversation-container');
+
+  form.addEventListener('submit', newMessage);
+
+  function newMessage(e) {
+    e.preventDefault();
+    var input = e.target.input;
+
+    $.ajax({
+      url: "/users/save-chat",
+      type: "POST",
+      data: {
+        sender_id,
+        receiver_id,
+        message: input.value
+      },
+      success: (data) => {
+        if (data.success) {
+          const time = modifyDate(data.data.createdAt);
+          var message = buildMessage(data.data.message, time);
+          conversation.appendChild(message);
+          animateMessage(message);
+
+          input.value = '';
+          conversation.scrollTop = conversation.scrollHeight;
+
+          socket.emit("newChat", data.data)
+
+        } else {
+          alert(data.message)
+        }
+      }
+    })
+  }
+
+  function buildReceiverMessage(text, time) {
+    var element = document.createElement('div');
+
+    element.classList.add('message', 'received');
+
+    element.innerHTML = text +
+      '<span class="metadata">' +
+      `<span class="time"> ${time} </span>`;
+
+    return element;
+  }
+
+  function buildMessage(text, time) {
+    var element = document.createElement('div');
+    console.log(time)
+    element.classList.add('message', 'sent');
+
+    element.innerHTML = text +
+      '<span class="metadata">' +
+      `<span class="time"> ${time} </span>` +
+      '<span class="tick tick-animation">' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="15" id="msg-dblcheck" x="2047" y="2061"><path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.88a.32.32 0 0 1-.484.032l-.358-.325a.32.32 0 0 0-.484.032l-.378.48a.418.418 0 0 0 .036.54l1.32 1.267a.32.32 0 0 0 .484-.034l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.88a.32.32 0 0 1-.484.032L1.892 7.77a.366.366 0 0 0-.516.005l-.423.433a.364.364 0 0 0 .006.514l3.255 3.185a.32.32 0 0 0 .484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" fill="#92a58c"/></svg>' +
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="15" id="msg-dblcheck-ack" x="2063" y="2076"><path d="M15.01 3.316l-.478-.372a.365.365 0 0 0-.51.063L8.666 9.88a.32.32 0 0 1-.484.032l-.358-.325a.32.32 0 0 0-.484.032l-.378.48a.418.418 0 0 0 .036.54l1.32 1.267a.32.32 0 0 0 .484-.034l6.272-8.048a.366.366 0 0 0-.064-.512zm-4.1 0l-.478-.372a.365.365 0 0 0-.51.063L4.566 9.88a.32.32 0 0 1-.484.032L1.892 7.77a.366.366 0 0 0-.516.005l-.423.433a.364.364 0 0 0 .006.514l3.255 3.185a.32.32 0 0 0 .484-.033l6.272-8.048a.365.365 0 0 0-.063-.51z" fill="#4fc3f7"/></svg>' +
+      '</span>' +
+      '</span>';
+
+    return element;
+  }
+
+  function animateMessage(message) {
+    setTimeout(function() {
+      var tick = message.querySelector('.tick');
+      tick.classList.remove('tick-animation');
+    }, 500);
+  }
+
+  function modifyDate(time) {
+    const dateStr = time;
+    const date = new Date(dateStr);
+
+    date.setHours(date.getHours());
+    date.setMinutes(date.getMinutes());
+
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    hours = hours % 12;
+    hours = hours ? hours : 12; // 0 should be converted to 12
+
+    const timeStr = hours + ':' + (minutes < 10 ? '0' : '') + minutes + ' ' + ampm;
+
+    return timeStr;
+  }
+
+  socket.on("loadNewChat", (data) => {
+    if (sender_id === data.receiver_id && receiver_id === data.sender_id) {
+      const time = modifyDate(data.createdAt);
+      const receiverMessage = buildReceiverMessage(data.message, time)
+      conversation.appendChild(receiverMessage);
+      animateMessage(receiverMessage);
+
+      conversation.scrollTop = conversation.scrollHeight;
+    }
+  })
+</script>
 
 </body>
 

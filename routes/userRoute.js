@@ -6,7 +6,7 @@ const {
   loginForm,
   login,
   logout,
-  getProfile,
+  getProfile,saveChat
 } = require("../controllers/userController");
 const upload = require("../config/multerConfig");
 const passport = require("passport");
@@ -34,6 +34,7 @@ router
       "<p>You have successfully logged in. <a href='/users/profile'>Go to protected Route</a></p>";
 
     res.send(html);
-  });
+  })
+  .post("/save-chat", saveChat);
 
 module.exports = router;

@@ -10,13 +10,10 @@ const cors = require("cors");
 const corsOptions = require("./config/corsConfig");
 const CustomError = require("./middleware/CustomError");
 const errorHandler = require("./middleware/errorHandler");
+const User = require("./models/User");
 
 require("dotenv").config();
 require("./config/passport");
-
-const app = express();
-const server = createServer(app);
-const io = new Server(server);
 
 const sessionOptions = {
   resave: false,
@@ -27,6 +24,8 @@ const sessionOptions = {
   },
 };
 
+const app = express();
+const server = createServer(app);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -37,6 +36,50 @@ app.use(passport.session());
 app.set("view engine", "ejs");
 app.set("views");
 app.use(express.static("public"));
+
+const io = new Server(server);
+
+io.on("connection", async (socket) => {
+  console.log("User Connected");
+
+  const { query } = socket.handshake;
+  const sender_id = query.sender_id;
+
+  socket.broadcast.emit("get-online-user", { sender_id });
+
+  await User.findByIdAndUpdate(sender_id, {
+    is_online: true,
+  });
+
+  socket.on("disconnect", async () => {
+    console.log("User disconnected");
+
+    socket.broadcast.emit("get-offline-user", { sender_id });
+
+    await User.findByIdAndUpdate(sender_id, {
+      is_online: false,
+    });
+  });
+
+  socket.on("chat message", (msg) => {
+    console.log("message " + msg);
+    io.emit("chat message", msg);
+  });
+
+  socket.on("newChat", (data) => {
+    socket.broadcast.emit("loadNewChat", data);
+  });
+
+  socket.on("checkOnlineStatus", async (data) => {
+    const receiver_id = data.receiver_id;
+
+    const user = await User.findById(receiver_id);
+
+    const online = user.is_online;
+
+    socket.emit("onlineStatus", { receiver_id, online });
+  });
+});
 
 app.use("/users", userRoute);
 

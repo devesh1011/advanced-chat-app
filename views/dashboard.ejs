@@ -46,16 +46,27 @@
         </div>
       </div>
     </div>
-    <div class="main__content col col-lg-8">
+    <div class="main__content col col-lg-3">
       <h2>All Users</h2>
       <div class="row">
         <% for (let i = 0; i < users.length; i++) { %>
         <% if (users[i]._id.toString() !== user._id.toString()) { %>
         <div class="col-md-4">
-          <div class="card mb-4 shadow-sm">
+          <div class="card mb-4 shadow-sm" data-id="<%= users[i]._id %>">
+            <% if (users[i].is_online) { %>
+            <!-- If user is online, use green badge -->
+            <span id="<%= users[i]._id %>_status" class="position-absolute top-0 start-100 translate-middle p-2 bg-success border border-light rounded-circle">
+              <span class="visually-hidden">Online</span>
+            </span>
+            <% } else { %>
+            <!-- If user is offline, use red badge -->
+            <span id="<%= users[i]._id %>_status" class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle">
+              <span class="visually-hidden">Offline</span>
+            </span>
+            <% } %>
             <img width="50px" src="<%= `http://localhost:3000/${users[i].image}` %>" class="card-img-top" alt="User Avatar">
             <div class="card-body">
-              <h5 class="card-title"><%= users[i].name %></h5>
+              <h5 class="card-title <%= users[i]._id %>_name"><%= users[i].name %></h5>
               <p class="card-text"><%= users[i].email %></p>
               <!-- Additional user info or actions can go here -->
             </div>
@@ -64,34 +75,41 @@
         <% } %>
         <% } %>
       </div>
-
-      <div class="chat-section">
-        <form id="form" action="">
-          <input id="input" autocomplete="off" /><button>Send</button>
-        </form>
+    </div>
+    <div class="chat-section col col-lg-6">
+      <div class="chat">
+        <div class="chat-container">
+          <div class="user-bar">
+            <div class="back">
+              <i class="zmdi zmdi-arrow-left"></i>
+            </div>
+            <div class="avatar">
+              <img src="" alt="Avatar">
+            </div>
+            <div class="name">
+              <span class="receiver_name">Zeno Rocha</span>
+              <span class="current_status">online</span>
+            </div>
+          </div>
+          <div class="conversation">
+            <div class="conversation-container">
+            </div>
+            <form class="conversation-compose">
+              <input class="input-msg" name="input" placeholder="Type a message" autocomplete="off" autofocus></input>
+              <div class="photo">
+                <i class="zmdi zmdi-camera"></i>
+              </div>
+              <button class="send">
+                <div class="circle">
+                  <i class="zmdi zmdi-mail-send"></i>
+                </div>
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-BBtl+eGJRgqQAUMxJ7pMwbEyER4l1g+O15P+16Ep7Q9Q+zqX6gSbd85u4mG4QzX+" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-
-  <script>
-    $(document).ready(function() {
-
-      $('[data-toggle=offcanvas]').click(function() {
-        $('.row-offcanvas').toggleClass('active');
-      });
-
-      $('.card').click(() => {
-        $('.chat-section').show();
-      })
-
-    });
-  </script>
-
-</body>
-
-</html>
-<!-- Page Content  -->
+  <%- include('layouts/footer'); -%>
