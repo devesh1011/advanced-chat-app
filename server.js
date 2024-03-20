@@ -11,6 +11,7 @@ const corsOptions = require("./config/corsConfig");
 const CustomError = require("./middleware/CustomError");
 const errorHandler = require("./middleware/errorHandler");
 const User = require("./models/User");
+const Chat = require("./models/Chat");
 
 require("dotenv").config();
 require("./config/passport");
@@ -78,6 +79,27 @@ io.on("connection", async (socket) => {
     const online = user.is_online;
 
     socket.emit("onlineStatus", { receiver_id, online });
+  });
+
+  socket.on("pastChats", async (data) => {
+    const { sender_id, receiver_id } = data;
+
+    const chats = await Chat.find({
+      $or: [
+        {
+          sender_id,
+          receiver_id,
+        },
+        {
+          sender_id: receiver_id,
+          receiver_id: sender_id,
+        },
+      ],
+    });
+
+    socket.emit("sendChats", {
+      chats,
+    });
   });
 });
 

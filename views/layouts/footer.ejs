@@ -33,8 +33,16 @@
       })
 
       $('.chat-section').show();
+
+      socket.emit("pastChats", {
+        sender_id,
+        receiver_id
+      })
     });
   });
+
+  var form = document.querySelector('.conversation-compose');
+  var conversation = document.querySelector('.conversation-container');
 
   // get user status (online or offline)
   socket.on("get-online-user", (data) => {
@@ -53,10 +61,35 @@
     $(`.${userId}`).text(status);
   });
 
-  // user chat save
-  var form = document.querySelector('.conversation-compose');
-  var conversation = document.querySelector('.conversation-container');
+  socket.on("sendChats", (data) => {
+    $(".conversation-container").html("");
 
+    const {
+      chats
+    } = data;
+
+    for (let chat of chats) {
+      if (chat.sender_id === sender_id) {
+        const time = modifyDate(chat.createdAt);
+        var message = buildMessage(chat.message, time);
+        conversation.appendChild(message);
+
+        animateMessage(message);
+
+      } else {
+        const time = modifyDate(chat.createdAt);
+        let message = buildReceiverMessage(chat.message, time);
+        conversation.append(message)
+
+        animateMessage(message)
+      }
+    }
+    setTimeout(() => {
+      conversation.scrollTop = conversation.scrollHeight;
+    }, 0); // Modified Line
+  })
+
+  // user chat save
   form.addEventListener('submit', newMessage);
 
   function newMessage(e) {
@@ -79,7 +112,9 @@
           animateMessage(message);
 
           input.value = '';
-          conversation.scrollTop = conversation.scrollHeight;
+          setTimeout(() => {
+            conversation.scrollTop = conversation.scrollHeight;
+          }, 0); // Modified Line
 
           socket.emit("newChat", data.data)
 
@@ -152,7 +187,9 @@
       conversation.appendChild(receiverMessage);
       animateMessage(receiverMessage);
 
-      conversation.scrollTop = conversation.scrollHeight;
+      setTimeout(() => {
+        conversation.scrollTop = conversation.scrollHeight;
+      }, 0); // Modified Line
     }
   })
 </script>
